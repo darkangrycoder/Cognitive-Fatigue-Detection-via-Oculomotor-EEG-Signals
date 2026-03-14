@@ -11,7 +11,7 @@
 Pretrained on 881 subjects of high-resolution eye-tracking data (GazeBase, 1000 Hz),  
 fine-tuned on EEG vigilance classification (SEED-VIG, 200 Hz) with Leave-One-Subject-Out validation.
 
-[🤗 Live Demo]((https://huggingface.co/spaces/tdnathmlenthusiast/CognitiveFatigueDetector)) · [📄 Paper](#) · [📊 Results](#-results--findings) · [🚀 Quick Start](#-quick-start)
+[🤗 Live Demo](https://huggingface.co/spaces/tdnathmlenthusiast/CognitiveFatigueDetector) · [📄 Paper](#) · [📊 Results](#-results--findings) · [🚀 Quick Start](#-quick-start)
 
 </div>
 
