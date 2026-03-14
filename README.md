@@ -81,7 +81,9 @@ flowchart TD
 ```
 
 ---
-
+### 2. GazeBase Feature Extraction Pipeline
+ 
+```mermaid
 flowchart LR
     classDef input fill:#154360,color:#fff,stroke:#1A5276
     classDef step fill:#0E6655,color:#fff,stroke:#117A65
@@ -131,7 +133,7 @@ flowchart LR
     B3 --> PARQ
     B4 --> PARQ
     B5 --> PARQ
-
+```
 ### 3. Two-Stage Training Strategy
 
 ```mermaid
@@ -264,7 +266,9 @@ flowchart LR
 ```
 
 ---
-
+### 6. Real-Time Inference Pipeline (HuggingFace App)
+ 
+```mermaid
 flowchart TD
     classDef input fill:#1A3A4A,color:#fff,stroke:#1A5276
     classDef proc fill:#0E6655,color:#fff,stroke:#117A65
@@ -318,6 +322,7 @@ flowchart TD
         N1[GazeBase: 1000 Hz\nWebcam: 30 fps\nScale factor: 0.033]:::note
         N2[Velocity thresholds scaled proportionally.\nLonger 60s window\ncompensates for lower density.]:::note
     end
+```
 ---
 
 ## 📦 Datasets
