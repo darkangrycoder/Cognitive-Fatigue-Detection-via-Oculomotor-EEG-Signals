@@ -1,0 +1,19 @@
+# Gradio 5.9.1 — pinned to avoid Gradio 6 breaking changes
+# (mirror_webcam, webcam_constraints, show_download_button removed in Gradio 6)
+gradio==5.9.1
+
+# PyTorch CPU — model is tiny (3 linear layers), CPU inference is fast
+torch==2.5.0+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+# Scientific stack — unpinned to let pip resolve against Python 3.13
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+# HuggingFace Hub — checkpoint download
+huggingface_hub
+
+# Image processing — webcam frame handling and OpenCV Haar cascades
+Pillow
+opencv-python-headless
