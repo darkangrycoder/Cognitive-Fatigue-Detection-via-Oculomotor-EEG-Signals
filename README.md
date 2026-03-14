@@ -82,50 +82,55 @@ flowchart TD
 
 ---
 
-### 2. GazeBase Feature Extraction Pipeline
-
-```mermaid
 flowchart LR
-    classDef input fill:#154360,color:#fff,stroke:#1A5276,rx:5
-    classDef step fill:#0E6655,color:#fff,stroke:#117A65,rx:5
-    classDef feat fill:#6C3483,color:#fff,stroke:#7D3C98,rx:5
-    classDef out fill:#784212,color:#fff,stroke:#935116,rx:5
-    classDef warn fill:#922B21,color:#fff,stroke:#A93226,rx:5
+    classDef input fill:#154360,color:#fff,stroke:#1A5276
+    classDef step fill:#0E6655,color:#fff,stroke:#117A65
+    classDef feat fill:#6C3483,color:#fff,stroke:#7D3C98
+    classDef out fill:#784212,color:#fff,stroke:#935116
+    classDef warn fill:#922B21,color:#fff,stroke:#A93226
+    classDef collect fill:#4A235A,color:#fff,stroke:#7D3C98
 
-    CSV[CSV Recording\nS_{subj}_{sess}_{abbr}.csv\n1000 Hz]:::input
+    CSV[CSV Recording\nS_subj_sess_abbr.csv\n1000 Hz]:::input
 
     CSV --> VAL{val == 0?\nValid samples only}:::step
-    VAL -->|< 50 samples| DROP[Skip recording]:::warn
-    VAL -->|≥ 50 valid| PARSE[Parse Metadata\nround, subject,\nsession, task]:::step
+    VAL -->|less than 50 samples| DROP[Skip recording]:::warn
+    VAL -->|50 or more valid| PARSE[Parse Metadata\nround, subject\nsession, task]:::step
 
     PARSE --> LAB{lab column\npresent?}:::step
-    LAB -->|lab 1+2 exist| GT[Ground-truth labels\nlab=1 fixation\nlab=2 saccade]:::step
-    LAB -->|NaN — BLG/VD1/VD2| VT[Velocity threshold\n< 30°/s fixation\n30-700°/s saccade]:::step
+    LAB -->|lab 1 and 2 exist| GT[Ground-truth labels\nlab=1 fixation\nlab=2 saccade]:::step
+    LAB -->|NaN: BLG, VD1, VD2| VT[Velocity threshold\nbelow 30 deg/s fixation\n30-700 deg/s saccade]:::step
 
     GT --> SEG[Segment extraction\nrun-length encoding]:::step
     VT --> SEG
 
-    PARSE --> VEL[Velocity signal\n√Δx²+Δy² × SR\ncap at 700°/s]:::step
+    PARSE --> VEL[Velocity signal\nsqrt dx2 plus dy2 x SR\ncap at 700 deg/s]:::step
     PARSE --> BLINK[Blink detection\ninvalid burst\n50-500 ms windows]:::step
 
-    SEG --> FEATS:::feat
-    VEL --> FEATS:::feat
-    BLINK --> FEATS:::feat
-    PARSE --> FEATS:::feat
+    SEG --> COL[ ]:::collect
+    VEL --> COL
+    BLINK --> COL
+    PARSE --> COL
 
     subgraph FEATS[16 Clean Oculomotor Features]
         direction TB
-        B1[🔴 Blink\nblink_rate_pm\nblink_count\nmean_blink_ms]:::feat
-        B2[🔵 Fixation\nnum_fixations\nmean_fix_ms\nstd_fix_ms]:::feat
-        B3[🟢 Saccade\nnum_saccades\nmean_sac_ms\nmean_sac_vel\npeak_sac_vel\nvel_std]:::feat
-        B4[🟡 Pupil\nmean_pupil\nstd_pupil\npupil_range]:::feat
-        B5[🟠 Gaze\ngaze_x_std\ngaze_y_std]:::feat
+        B1[Blink\nblink_rate_pm\nblink_count\nmean_blink_ms]:::feat
+        B2[Fixation\nnum_fixations\nmean_fix_ms\nstd_fix_ms]:::feat
+        B3[Saccade\nnum_saccades\nmean_sac_ms\nmean_sac_vel\npeak_sac_vel\nvel_std]:::feat
+        B4[Pupil\nmean_pupil\nstd_pupil\npupil_range]:::feat
+        B5[Gaze\ngaze_x_std\ngaze_y_std]:::feat
     end
 
-    FEATS --> PARQ[gazebase_flat.parquet\n~12,334 records × 23 cols]:::out
-```
+    COL --> B1
+    COL --> B2
+    COL --> B3
+    COL --> B4
+    COL --> B5
 
----
+    B1 --> PARQ[gazebase_flat.parquet\n12334 records x 23 cols]:::out
+    B2 --> PARQ
+    B3 --> PARQ
+    B4 --> PARQ
+    B5 --> PARQ
 
 ### 3. Two-Stage Training Strategy
 
@@ -260,61 +265,59 @@ flowchart LR
 
 ---
 
-### 6. Real-Time Inference Pipeline (HuggingFace App)
-
-```mermaid
 flowchart TD
-    classDef input fill:#1A3A4A,color:#fff,stroke:#1A5276,rx:5
-    classDef proc fill:#0E6655,color:#fff,stroke:#117A65,rx:5
-    classDef model fill:#6C3483,color:#fff,stroke:#7D3C98,rx:5
-    classDef out fill:#784212,color:#fff,stroke:#935116,rx:5
-    classDef warn fill:#922B21,color:#fff,stroke:#A93226,rx:5
-    classDef note fill:#2C3E50,color:#fff,stroke:#1A252F,rx:4
+    classDef input fill:#1A3A4A,color:#fff,stroke:#1A5276
+    classDef proc fill:#0E6655,color:#fff,stroke:#117A65
+    classDef model fill:#6C3483,color:#fff,stroke:#7D3C98
+    classDef out fill:#784212,color:#fff,stroke:#935116
+    classDef warn fill:#922B21,color:#fff,stroke:#A93226
+    classDef note fill:#2C3E50,color:#fff,stroke:#1A252F
 
-    CAM[📷 Webcam / Uploaded CSV]:::input
+    CAM[Webcam or Uploaded CSV]:::input
 
     CAM --> MP[MediaPipe FaceMesh\n468 facial landmarks\n30 fps]:::proc
     CAM --> CSV_UP[GazeBase CSV\n1000 Hz\nground-truth format]:::proc
 
     MP --> IRIS[Iris landmark extraction\nLeft: 474-477\nRight: 469-472]:::proc
-    MP --> EAR[Eye Aspect Ratio\nblink detection\nEAR < 0.20]:::proc
+    MP --> EAR[Eye Aspect Ratio\nblink detection\nEAR below 0.20]:::proc
 
     IRIS --> VEL_W[Velocity estimation\nframe-to-frame displacement\nscaled to 30fps baseline]:::proc
     IRIS --> DISP[Gaze dispersion\nx/y centroid std\nover 60s rolling window]:::proc
 
     EAR --> BLINK_W[Blink features\nrate, count, duration]:::proc
-    VEL_W --> FIX_SAC[Fixation / saccade\nsegmentation\n1.0 px/frame threshold]:::proc
+    VEL_W --> FIX_SAC[Fixation and saccade\nsegmentation\n1.0 px/frame threshold]:::proc
 
-    BLINK_W --> FEAT16[16-dim feature vector\nStandardScaler\n(saved from training)]:::proc
+    BLINK_W --> FEAT16[16-dim feature vector\nStandardScaler\nsaved from training]:::proc
     FIX_SAC --> FEAT16
     DISP --> FEAT16
 
-    CSV_UP --> EXACT[Exact pipeline\nextract_features()\nno approximation]:::proc
+    CSV_UP --> EXACT[Exact pipeline\nextract_features\nno approximation]:::proc
     EXACT --> FEAT16
 
-    FEAT16 --> ENC_INF[SharedEncoder\n16 → 64-dim latent]:::model
-    ENC_INF --> HEAD_INF[Regression Head\n64 → 32 → 1\nfatigue z-score]:::model
+    FEAT16 --> ENC_INF[SharedEncoder\n16 to 64-dim latent]:::model
+    ENC_INF --> HEAD_INF[Regression Head\n64 to 32 to 1\nfatigue z-score]:::model
 
     HEAD_INF --> SCORE[Fatigue score\nz-scored output]:::out
+    SCORE --> PCTILE[Percentile vs\n12334 GazeBase recordings]:::out
 
-    SCORE --> PCTILE[Percentile vs\n12,334 GazeBase recordings]:::out
+    SCORE --> I1[Mental State\nAlert to Fatigued\n0 to 100 percent scale]:::out
+    SCORE --> I2[Blink Health\nvs 15-20 per min\nnormal range]:::out
+    SCORE --> I3[Eye Strain\nsaccade velocity\nvs population mean]:::out
+    SCORE --> I4[Break Advisor\nscreen time\nrecommendation]:::out
 
-    subgraph INSIGHTS["👤 User-Facing Insight Cards"]
+    subgraph INSIGHTS[User-Facing Insight Cards]
         direction LR
-        I1[🧠 Mental State\nAlert → Fatigued\n0–100% scale]:::out
-        I2[👁️ Blink Health\nvs 15-20/min\nnormal range]:::out
-        I3[📊 Eye Strain\nsaccade velocity\nvs population mean]:::out
-        I4[⏱️ Break Advisor\nscreen time\nrecommendation]:::out
+        I1
+        I2
+        I3
+        I4
     end
 
-    SCORE --> INSIGHTS
-
-    subgraph NOTE["⚠️ Webcam Calibration Note"]
+    subgraph NOTE[Webcam Calibration Note]
+        direction LR
         N1[GazeBase: 1000 Hz\nWebcam: 30 fps\nScale factor: 0.033]:::note
-        N2[Velocity thresholds\nscaled proportionally.\nLonger 60s window\ncompensates for lower density.]:::note
+        N2[Velocity thresholds scaled proportionally.\nLonger 60s window\ncompensates for lower density.]:::note
     end
-```
-
 ---
 
 ## 📦 Datasets
